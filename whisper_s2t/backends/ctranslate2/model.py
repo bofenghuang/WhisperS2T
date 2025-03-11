@@ -215,12 +215,14 @@ class WhisperModelCT2(WhisperModel):
 
         return word_timings
     
-    def generate_segment_batched(self, features, prompts, seq_lens, seg_metadata):
+    def generate_segment_batched(self, features, align_features, prompts, seq_lens, seg_metadata):
         
         if self.device == 'cpu':
             features = np.ascontiguousarray(features.detach().numpy())
+            align_features = np.ascontiguousarray(align_features.detach().numpy()) if align_features is not None else None
         else:
             features = features.contiguous()
+            align_features = align_features.contiguous() if align_features is not None else None
 
         result = self.model.generate(ctranslate2.StorageView.from_array(features),
                                      prompts,
@@ -243,7 +245,8 @@ class WhisperModelCT2(WhisperModel):
         if self.asr_options['word_timestamps']:
             text_tokens = [x.sequences_ids[0]+[self.tokenizer.eot] for x in result]
             sot_seqs = [tuple(_[-4:]) for _ in prompts]
-            word_timings = self.align_words(features, texts, text_tokens, sot_seqs, seq_lens, seg_metadata)
+            # word_timings = self.align_words(features, texts, text_tokens, sot_seqs, seq_lens, seg_metadata)
+            word_timings = self.align_words(align_features, texts, text_tokens, sot_seqs, seq_lens, seg_metadata)
 
             for _response, _word_timings in zip(response, word_timings):
                 _response['word_timestamps'] = _word_timings
