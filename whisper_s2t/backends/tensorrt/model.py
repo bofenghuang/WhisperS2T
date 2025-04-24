@@ -230,7 +230,7 @@ class WhisperModelTRT(WhisperModel):
 
         return word_timings
     
-    def generate_segment_batched(self, features, align_features, prompts, seq_lens, seg_metadata):
+    def generate_segment_batched(self, features, align_features, prompts, seq_lens, seg_metadata, word_timestamps=False):
 
         result = self.model.generate(features,
                                      prompts,
@@ -242,7 +242,7 @@ class WhisperModelTRT(WhisperModel):
         for idx, r in enumerate(result):
             response.append({'text': texts[idx].strip()})
 
-        if self.asr_options['word_timestamps']:
+        if word_timestamps and self.asr_options['word_timestamps']:
             text_tokens = [[_t for _t in x[0] if _t < self.tokenizer.eot]+[self.tokenizer.eot] for x in result]
             sot_seqs = [tuple(_[-4:]) for _ in prompts]
             # word_timings = self.align_words(features, texts, text_tokens, sot_seqs, seq_lens, seg_metadata)

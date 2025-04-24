@@ -112,7 +112,7 @@ class WhisperModel(ABC):
         pass
         
     @torch.no_grad()
-    def transcribe(self, audio_files, lang_codes=None, tasks=None, initial_prompts=None, batch_size=8):
+    def transcribe(self, audio_files, lang_codes=None, tasks=None, initial_prompts=None, batch_size=8, word_timestamps=False):
         
         # if lang_codes == None:
         #     lang_codes = len(audio_files)*['en']
@@ -142,8 +142,8 @@ class WhisperModel(ABC):
             for signals, prompts, seq_len, seg_metadata, pbar_update in self.data_loader(audio_files, lang_codes, tasks, initial_prompts, batch_size=batch_size, use_vad=False):
                 mels, seq_len = self.preprocessor(signals, seq_len)
                 # res = self.generate_segment_batched(mels.to(self.device), prompts, seq_len, seg_metadata)
-                align_mels = self.align_preprocessor(signals, seq_len)[0].to(self.device) if self.asr_options['word_timestamps'] else None
-                res = self.generate_segment_batched(mels.to(self.device), align_mels, prompts, seq_len, seg_metadata)
+                align_mels = self.align_preprocessor(signals, seq_len)[0].to(self.device) if self.asr_options['word_timestamps'] and word_timestamps else None
+                res = self.generate_segment_batched(mels.to(self.device), align_mels, prompts, seq_len, seg_metadata, word_timestamps)
 
                 for res_idx, _seg_metadata in enumerate(seg_metadata):
                     responses[_seg_metadata['file_id']].append({**res[res_idx],
@@ -159,7 +159,7 @@ class WhisperModel(ABC):
         return responses
 
     @torch.no_grad()
-    def transcribe_with_vad(self, audio_files, lang_codes=None, tasks=None, initial_prompts=None, batch_size=8):
+    def transcribe_with_vad(self, audio_files, lang_codes=None, tasks=None, initial_prompts=None, batch_size=8, word_timestamps=False):
 
         lang_codes = fix_batch_param(lang_codes, 'en', len(audio_files))
         tasks = fix_batch_param(tasks, 'transcribe', len(audio_files))
@@ -172,8 +172,8 @@ class WhisperModel(ABC):
             for signals, prompts, seq_len, seg_metadata, pbar_update in self.data_loader(audio_files, lang_codes, tasks, initial_prompts, batch_size=batch_size):
                 mels, seq_len = self.preprocessor(signals, seq_len)
                 # res = self.generate_segment_batched(mels.to(self.device), prompts, seq_len, seg_metadata)
-                align_mels = self.align_preprocessor(signals, seq_len)[0].to(self.device) if self.asr_options['word_timestamps'] else None
-                res = self.generate_segment_batched(mels.to(self.device), align_mels, prompts, seq_len, seg_metadata)
+                align_mels = self.align_preprocessor(signals, seq_len)[0].to(self.device) if self.asr_options['word_timestamps'] and word_timestamps else None
+                res = self.generate_segment_batched(mels.to(self.device), align_mels, prompts, seq_len, seg_metadata, word_timestamps)
 
                 for res_idx, _seg_metadata in enumerate(seg_metadata):
                     responses[_seg_metadata['file_id']].append({**res[res_idx],
