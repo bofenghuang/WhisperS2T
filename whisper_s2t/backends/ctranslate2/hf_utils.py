@@ -1,5 +1,6 @@
 # https://github.com/guillaumekln/faster-whisper/blob/master/faster_whisper/utils.py
 
+import logging
 import os
 import re
 import requests
@@ -97,7 +98,7 @@ def download_model(
         requests.exceptions.ConnectionError,
     ) as exception:
         print(exception)
-        logger = get_logger()
+        logger = logging.getLogger(__name__)
         logger.warning(
             "An error occured while synchronizing the model %s from the Hugging Face Hub:\n%s",
             repo_id,
