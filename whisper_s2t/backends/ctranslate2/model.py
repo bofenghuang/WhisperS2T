@@ -31,6 +31,7 @@ FAST_ASR_OPTIONS = {
     "return_scores": True,
     "return_no_speech_prob": True,
     "word_aligner_model": 'tiny',
+    "return_logits_vocab": False, # Placeholder
 }
 
 
@@ -54,6 +55,7 @@ BEST_ASR_CONFIG = {
     "return_scores": True,
     "return_no_speech_prob": True,
     "word_aligner_model": 'tiny',
+    "return_logits_vocab": False, # Placeholder
 }
 
 
@@ -114,6 +116,7 @@ class WhisperModelCT2(WhisperModel):
             "suppress_tokens": self.asr_options['suppress_tokens'],
             "max_initial_timestamp_index": int(round(self.asr_options['max_initial_timestamp']/TIME_PRECISION)),
             "sampling_temperature": self.asr_options['sampling_temperature'],
+            "return_logits_vocab": self.asr_options['return_logits_vocab'],
         }
 
         super().__init__(
@@ -241,6 +244,11 @@ class WhisperModelCT2(WhisperModel):
 
             if self.generate_kwargs['return_no_speech_prob']:
                 response[-1]['no_speech_prob'] = r.no_speech_prob
+
+            if self.generate_kwargs["return_logits_vocab"]:
+                response[-1]['sequences'] = r.sequences
+                response[-1]['sequences_ids'] = r.sequences_ids
+                response[-1]['logits'] = r.logits
 
         if word_timestamps and self.asr_options['word_timestamps']:
             text_tokens = [x.sequences_ids[0]+[self.tokenizer.eot] for x in result]
