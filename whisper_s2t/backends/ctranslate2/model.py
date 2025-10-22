@@ -248,7 +248,17 @@ class WhisperModelCT2(WhisperModel):
             if self.generate_kwargs["return_logits_vocab"]:
                 response[-1]['sequences'] = r.sequences
                 response[-1]['sequences_ids'] = r.sequences_ids
-                response[-1]['logits'] = r.logits
+                # Serialize output: convert list of StorageView objects to list of lists
+                logits_hyps = r.logits  # get the list of StorageView logits: all hypotheses
+                logits_hyps_list = []
+                for hyp in logits_hyps:
+                    logits_list = []
+                    for logits_sv in hyp:
+                        logits_sv = logits_sv.to_device(ctranslate2.Device.cpu)
+                        arr = np.array(logits_sv, copy=True)
+                        logits_list.append(arr.tolist())
+                    logits_hyps_list.append(logits_list)
+                response[-1]['logits'] = logits_hyps_list
 
         if word_timestamps and self.asr_options['word_timestamps']:
             text_tokens = [x.sequences_ids[0]+[self.tokenizer.eot] for x in result]
